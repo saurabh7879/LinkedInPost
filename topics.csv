@@ -1,0 +1,495 @@
+Designing scalable APIs in ASP.NET Core with caching and Redis
+Building high performance .NET APIs using async and parallelism
+API versioning strategies in enterprise systems
+Designing idempotent APIs for distributed systems
+Pagination strategies Offset vs Cursor vs Keyset
+Handling retries and failures in API calls
+API Gateway vs BFF pattern in microservices
+Rate limiting in ASP.NET Core APIs
+Designing multi tenant APIs
+Secure API design using OAuth2 and JWT
+Circuit breaker implementation in .NET APIs
+API observability using OpenTelemetry
+Logging strategies in distributed APIs
+Designing event driven APIs with Kafka
+API orchestration vs choreography
+API contract first vs code first design
+GraphQL vs REST in modern systems
+Handling large payload APIs efficiently
+Streaming APIs using gRPC
+Designing resilient APIs using Polly
+API caching strategies memory vs distributed
+API performance benchmarking techniques
+Designing APIs for mobile first systems
+API backward compatibility strategies
+API security pitfalls developers ignore
+Handling concurrency in APIs
+API throttling techniques
+Building fault tolerant APIs
+API design for high traffic systems
+Handling partial failures in APIs
+Designing APIs for AI powered apps
+API first architecture in startups
+API lifecycle management
+API schema validation best practices
+API contract testing strategies
+API documentation automation
+Handling distributed tracing in APIs
+API monitoring dashboards
+API scaling strategies using Kubernetes
+API load balancing techniques
+API design for real time systems
+Handling API latency issues
+API deployment strategies blue green
+API rollback strategies
+API design anti patterns
+Building plugin based APIs
+API dependency management
+API gateway security best practices
+Designing APIs for AI agents
+Future of APIs with AI integration
+Designing scalable microservices architecture
+Monolith to microservices migration strategy
+Service discovery patterns
+Distributed transactions Saga pattern
+Event sourcing vs CRUD systems
+CQRS in real world systems
+Designing high availability systems
+Horizontal vs vertical scaling
+Load balancing strategies
+Designing systems for million users
+CAP theorem explained with real examples
+Handling data consistency in microservices
+Distributed caching strategies
+Message queue vs event streaming
+Designing resilient systems
+Fault tolerance in distributed systems
+System design for ecommerce platforms
+Designing chat systems
+Designing streaming systems
+Designing ride sharing systems
+Data partitioning strategies
+Database sharding techniques
+Handling hot partitions
+Designing multi region systems
+Disaster recovery planning
+Chaos engineering basics
+Observability in distributed systems
+Logging strategies at scale
+Monitoring microservices
+Circuit breaker in distributed systems
+Bulkhead pattern usage
+API gateway vs service mesh
+Kubernetes architecture basics
+Autoscaling strategies
+Infrastructure as Code
+Cloud cost optimization
+Designing serverless systems
+Cold start problem in serverless
+Edge computing basics
+CDN usage strategies
+Designing low latency systems
+Handling millions of events per second
+Data streaming architecture
+Backpressure handling
+System design interview approach
+Scaling databases effectively
+Designing high throughput systems
+Designing AI ready architecture
+Hybrid cloud architecture
+Future of system design
+SOLID principles in real projects
+Repository pattern in .NET
+Unit of Work pattern
+Factory vs Abstract Factory
+Strategy pattern in APIs
+Observer pattern in event systems
+Mediator pattern with MediatR
+Decorator pattern for logging
+Adapter pattern in integrations
+Singleton pitfalls in modern systems
+Dependency Injection best practices
+Clean Architecture in ASP.NET Core
+Onion vs Hexagonal architecture
+Domain driven design basics
+Aggregates in DDD
+Bounded contexts explained
+Anti corruption layer pattern
+Command pattern in APIs
+Query pattern optimization
+Builder pattern usage
+Template method pattern
+Chain of responsibility pattern
+Specification pattern
+Proxy pattern usage
+Facade pattern in microservices
+Event driven design patterns
+Saga pattern deep dive
+Circuit breaker pattern
+Retry pattern best practices
+Idempotency pattern
+API composition pattern
+Sidecar pattern in Kubernetes
+Strangler fig pattern
+Backend for frontend pattern
+Aggregator pattern
+Cache aside pattern
+Write through cache pattern
+CQRS pattern implementation
+Event sourcing pattern
+Anti patterns in system design
+Over engineering pitfalls
+Tight coupling issues
+God object problem
+Premature optimization mistakes
+Microservices anti patterns
+Clean code vs clean architecture
+Refactoring legacy systems
+Pattern selection strategies
+Combining patterns effectively
+Future of software architecture
+SQL vs NoSQL decision guide
+Indexing strategies in databases
+Query optimization techniques
+Database normalization vs denormalization
+Handling large datasets
+Database sharding strategies
+Partitioning vs sharding
+Connection pooling in .NET
+EF Core performance tuning
+N plus one query problem
+Read replicas usage
+Write heavy vs read heavy systems
+Caching strategies using Redis
+Data consistency models
+ACID vs BASE
+Eventual consistency explained
+Handling database locks
+Deadlocks in SQL
+Transaction isolation levels
+Time series databases
+Graph databases use cases
+Full text search systems
+ElasticSearch basics
+Database backup strategies
+Disaster recovery for databases
+Database migration strategies
+Zero downtime deployment
+Multi tenant database design
+Data security best practices
+Encryption at rest vs transit
+Database monitoring tools
+Query execution plans
+Slow query debugging
+Data archiving strategies
+Data lifecycle management
+High availability databases
+Distributed databases
+Cloud databases comparison
+Serverless databases
+Data warehousing basics
+ETL vs ELT
+Streaming data pipelines
+Data lake vs data warehouse
+OLTP vs OLAP
+Database scalability patterns
+Schema evolution strategies
+Handling schema migrations
+Database cost optimization
+Future of databases
+AI driven databases
+How LLMs work in simple terms
+Prompt engineering techniques
+Few shot vs zero shot prompting
+RAG architecture explained
+Vector databases basics
+Embeddings explained
+Fine tuning vs prompt tuning
+AI hallucination problem
+AI evaluation strategies
+Building AI chatbots with .NET
+AI in microservices architecture
+AI powered APIs
+AI observability
+AI security risks
+AI bias and fairness
+AI model deployment strategies
+AI pipelines MLOps
+AI inference optimization
+GPU vs CPU workloads
+AI cost optimization
+LLM caching strategies
+AI rate limiting
+AI fallback strategies
+Multi model orchestration
+AI agents architecture
+Tool calling in LLMs
+Memory in AI systems
+AI workflow automation
+AI database integration
+AI search systems
+AI recommendation systems
+AI in DevOps
+AI code generation
+AI testing automation
+AI debugging tools
+AI monitoring dashboards
+AI scaling challenges
+AI latency optimization
+AI event driven systems
+AI pipelines with Kafka
+AI governance
+AI compliance challenges
+AI system design patterns
+AI microservices architecture
+AI APIs best practices
+AI cloud architecture
+AI real time systems
+AI decision systems
+Future of GenAI apps
+AI engineering roadmap
+CI CD pipeline design for .NET microservices
+GitHub Actions vs Azure DevOps pipelines
+Dockerizing ASP.NET Core applications
+Multi stage Docker builds optimization
+Kubernetes architecture explained simply
+Deploying microservices on Kubernetes
+Helm charts for .NET applications
+Blue green deployments in Kubernetes
+Canary deployments strategy
+CI CD for AI ML pipelines
+Infrastructure as Code using Terraform
+Managing secrets in Kubernetes
+ConfigMaps vs Secrets
+Observability with Prometheus and Grafana
+Distributed tracing using OpenTelemetry
+Logging pipelines ELK stack
+Auto scaling in Kubernetes
+Handling zero downtime deployments
+CI CD rollback strategies
+GitOps workflow explained
+ArgoCD vs Flux
+Managing environments dev staging prod
+DevSecOps integration in pipelines
+Secure container image practices
+Container vulnerability scanning
+API deployment strategies at scale
+Serverless vs container based deployment
+Cold start optimization
+Edge deployments with CDN
+Managing cloud costs in CI CD
+Chaos engineering in production
+Feature flags in deployment
+A B testing with CI CD
+Pipeline performance optimization
+Handling build failures efficiently
+Versioning strategies in CI CD
+Artifact management best practices
+Multi cloud deployment strategy
+Hybrid cloud DevOps setup
+Event driven CI CD pipelines
+Monitoring Kubernetes clusters
+Debugging production issues in Kubernetes
+Self healing systems in Kubernetes
+Infrastructure monitoring strategies
+Deploying AI services via pipelines
+AI anomaly detection in DevOps
+DevOps maturity model
+Scaling CI CD pipelines
+DevOps anti patterns
+Future of DevOps with AI
+Authentication vs Authorization explained
+JWT authentication in ASP.NET Core
+OAuth2 and OpenID Connect deep dive
+Role based vs policy based authorization
+API security best practices
+Securing microservices architecture
+Zero trust architecture explained
+Identity server implementation
+Token expiration and refresh strategies
+Securing APIs with API gateways
+Rate limiting for security
+Preventing SQL injection attacks
+Preventing XSS and CSRF attacks
+Secure coding practices in .NET
+Encryption basics AES RSA
+Data encryption at rest and transit
+Secure password storage hashing
+Secrets management strategies
+Key vault usage in cloud
+Security in distributed systems
+API security testing tools
+Threat modeling basics
+OWASP Top 10 explained
+Security logging and auditing
+Identity federation
+Multi factor authentication
+Biometric authentication trends
+Secure session management
+API abuse prevention
+Bot detection strategies
+DDoS protection techniques
+Network security basics
+Cloud security architecture
+Security in Kubernetes
+Container security best practices
+Secure DevOps practices
+Compliance basics GDPR HIPAA
+Security in AI systems
+AI prompt injection attacks
+AI model security risks
+Data privacy in AI systems
+Secure data pipelines
+Identity and access management IAM
+RBAC vs ABAC
+Security monitoring systems
+Incident response strategies
+Security automation
+Ethical hacking basics
+Security anti patterns
+Future of cybersecurity
+React and .NET API integration best practices
+API design for frontend performance
+SSR vs CSR vs SSG explained
+Optimizing frontend API calls
+Handling large datasets in UI
+Pagination vs infinite scroll
+Caching strategies in frontend
+State management patterns
+API error handling in UI
+GraphQL for frontend optimization
+Real time UI with WebSockets
+SignalR in ASP.NET Core
+Frontend performance metrics
+Lazy loading strategies
+Code splitting techniques
+CDN usage for frontend
+Image optimization techniques
+Accessibility best practices
+Responsive design strategies
+API mocking for frontend development
+Contract testing frontend backend
+Micro frontend architecture
+Frontend security best practices
+Preventing XSS in UI
+UI performance debugging
+Lighthouse performance audit
+Progressive web apps
+Offline first applications
+Frontend observability
+UI logging strategies
+UX vs performance tradeoffs
+Frontend CI CD pipelines
+Testing frontend applications
+End to end testing strategies
+Component driven architecture
+Design systems in UI
+Storybook usage
+API first frontend development
+BFF pattern for frontend
+Mobile first design
+Handling slow networks
+Optimizing API payload size
+JSON vs Protobuf
+Frontend scalability challenges
+Web performance optimization
+Edge rendering strategies
+AI powered UI personalization
+Chatbot UI integration
+Voice UI basics
+Future of frontend engineering
+Designing Netflix architecture
+Designing YouTube system
+Designing chat system
+Designing ride sharing system
+Designing food delivery system
+Designing ecommerce system
+Designing social media feed
+Designing search engine
+Designing URL shortener
+Designing notification system
+Designing payment gateway
+Designing job portal system
+Designing gaming backend
+Designing stock trading system
+Designing live streaming system
+Designing video conferencing system
+Designing recommendation system
+Designing ad serving system
+Designing fraud detection system
+Designing file storage system
+Designing cloud storage system
+Designing email system
+Designing calendar system
+Designing IoT system
+Designing analytics pipeline
+Designing log aggregation system
+Designing monitoring system
+Designing chatbot system
+Designing AI assistant
+Designing RAG system
+Designing SaaS multi tenant system
+Designing CRM system
+Designing ERP system
+Designing healthcare system
+Designing banking system
+Designing ticket booking system
+Designing supply chain system
+Designing warehouse system
+Designing multiplayer game backend
+Designing navigation system
+Designing CDN system
+Designing autocomplete system
+Designing trending system
+Designing AI analytics system
+System design interview walkthrough
+How to think like a system architect
+Senior vs junior developer mindset
+Writing scalable code vs working code
+Debugging production issues
+Code review best practices
+Design before coding approach
+Breaking down large systems
+Estimating system scale
+Architecture tradeoffs decision making
+Microservices vs monolith decision
+Handling technical debt
+Refactoring legacy systems
+Writing maintainable code
+Communication skills for engineers
+Explaining system design in interviews
+Common system design mistakes
+Backend interview preparation roadmap
+.NET interview deep dive
+API design interview questions
+Database interview questions
+DevOps interview preparation
+Cloud interview preparation
+AI engineering interview basics
+Coding vs system design balance
+Building portfolio projects
+Open source contribution strategy
+Personal branding on LinkedIn
+Writing technical blogs effectively
+Growing as a staff engineer
+Leadership in engineering
+Decision making frameworks
+Handling production incidents
+Postmortem analysis
+Root cause analysis techniques
+Prioritization strategies
+Time management for engineers
+Learning new technologies fast
+Staying updated in tech
+Building architecture diagrams
+Documentation best practices
+Mentoring junior developers
+Building high performing teams
+Engineering culture
+Technical roadmap planning
+Scaling engineering teams
+Career transition to architect
+Avoiding burnout in tech
+Future skills engineers need
+AI impact on software careers
+Becoming a high impact engineer
