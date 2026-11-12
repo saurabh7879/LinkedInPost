@@ -2,125 +2,111 @@
 
 ## Overview
 
-Accepts a topic via webhook, generates a professional LinkedIn post using Gemini AI, and publishes it directly to your LinkedIn profile.
+Every day at 9 AM IST (or when the webhook is called), the workflow picks a topic from `topics.csv`, has OpenAI write a LinkedIn post in a fixed format, and publishes it to your LinkedIn profile.
 
-**Stack:** n8n · Gemini 2.5 Flash · LinkedIn UGC Posts API
+**Stack:** n8n · OpenAI `gpt-4o-mini` · LinkedIn Posts API (`/rest/posts`)
 
 ---
 
 ## Workflow Architecture
 
 ```
-POST /webhook/linkedin-post
-        │
-        ▼
-┌─────────────────┐
-│   Set Inputs    │  topic, tone, audience (with defaults)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Topic Provided? │──── NO ────► Error response
-└────────┬────────┘
-         │ YES
-         ▼
-┌─────────────────┐
-│  Generate Post  │  Gemini: writes LinkedIn-style post with hashtags
-│  (Gemini AI)    │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│  Extract Post   │  Pulls clean text from Gemini response
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ Publish to LinkedIn │  LinkedIn UGC Posts API
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Success Response│  Returns post ID + content
-└─────────────────┘
+Daily 9 AM IST ─┐
+                ├─► Fetch CSV ─► Parse CSV ─► Topic Exists? ──NO──► No Topics Response
+POST webhook ───┘   (GitHub raw)  (topic of     │ YES
+                                  the day)      ▼
+                                           Build Prompt
+                                                ▼
+                                    Generate Post (OpenAI)
+                                                ▼
+                                       Format for LinkedIn   escapes reserved characters,
+                                                ▼            turns #tags into hashtags
+                                       Publish to LinkedIn   POST /rest/posts
+                                                ▼
+                                         Success Response    post ID (x-restli-id) + text
 ```
+
+Topics rotate one per day: `dayIndex % number_of_rows` (IST date). The CSV is read from
+`https://raw.githubusercontent.com/saurabh7879/LinkedInPost/develop/topics.csv`. Edit
+the **Fetch CSV** node URL to use another file (it must be publicly readable).
 
 ---
 
-## Step 1 — Get LinkedIn Credentials
+## Step 1 — LinkedIn access token
 
-### Access Token
-1. Go to [LinkedIn Developer Portal](https://www.linkedin.com/developers/)
-2. Create an app → request `w_member_social` permission
-3. Use OAuth 2.0 to get an access token
-4. Token expires in 60 days — refresh as needed
+1. Go to the [LinkedIn Developer Portal](https://www.linkedin.com/developers/apps) and open your app.
+2. **Products** tab: add **Share on LinkedIn** (gives `w_member_social`) and
+   **Sign In with LinkedIn using OpenID Connect** (gives `openid profile`).
+3. **Auth** tab → **OAuth 2.0 tools** → **Create token**. Select `w_member_social openid profile`.
+4. Copy the token. **It expires after 60 days** — repeat these steps and update the n8n credential when it does.
 
-### Person URN
-Run this after getting your token:
+### Check your person URN
 ```bash
-curl -H "Authorization: Bearer YOUR_TOKEN" \
-  "https://api.linkedin.com/v2/me"
+curl -H "Authorization: Bearer YOUR_TOKEN" https://api.linkedin.com/v2/userinfo
 ```
-Copy the `id` field — your URN is `urn:li:person:{id}`
+Your URN is `urn:li:person:<sub>`. It must match `AUTHOR_URN` at the top of the
+**Format for LinkedIn** node (currently `urn:li:person:1H9p-wtG1P`).
 
 ---
 
-## Step 2 — Add Environment Variables in n8n
+## Step 2 — Create two credentials in n8n
 
-For convenience you can create a `.env` file at the project root (do NOT commit this file). Example `.env` content:
+n8n → **Credentials** → **Add credential** → **Header Auth**, twice:
 
-```
-GEMINI_API_KEY=your_gemini_key
-LINKEDIN_ACCESS_TOKEN=your_linkedin_token
-LINKEDIN_PERSON_URN=urn:li:person:your_id
-```
+| Credential name | Header name | Header value |
+|---|---|---|
+| `OpenAI Bearer` | `Authorization` | `Bearer sk-...your OpenAI key` |
+| `LinkedIn Bearer` | `Authorization` | `Bearer AQ...your LinkedIn token` |
 
-Alternatively, set these variables directly in n8n credentials or your deployment environment. If you create a `.env` file, this project already ignores it via `.gitignore`.
+Keys live only in n8n, never in the workflow JSON. A local `.env` (ignored by git) can hold
+copies for reference — never commit it.
 
 ---
 
-## Step 3 — Import & Activate
+## Step 3 — Import & activate
 
-1. n8n dashboard → **+ New Workflow** → Import `linkedin_post_workflow.json`
-2. Toggle **Activate** to green
+1. n8n → **+ New Workflow** → **⋯** → **Import from File** → `linkedin_post_workflow.json`.
+2. Open **Generate Post** and select the `OpenAI Bearer` credential; open **Publish to LinkedIn**
+   and select `LinkedIn Bearer` (n8n may ask you to re-pick them after import).
+3. Save and toggle **Active**.
+
+If you already have an older version imported, delete it (or deactivate it) so it doesn't post twice.
 
 ---
 
 ## Step 4 — Test
 
+Run the workflow manually in the editor, or call the webhook:
+
 ```bash
-curl -X POST https://n8n.framegenai.cloud/webhook/linkedin-post \
-  -H "Content-Type: application/json" \
-  -d '{"topic": "AI trends in 2025", "tone": "professional", "audience": "tech entrepreneurs"}'
+curl -X POST https://n8n.framegenai.cloud/webhook/linkedin-post
 ```
 
-**Request body fields:**
-
-| Field | Required | Default | Example |
-|---|---|---|---|
-| `topic` | YES | — | `"The future of remote work"` |
-| `tone` | no | `professional` | `"inspirational"`, `"casual"`, `"bold"` |
-| `audience` | no | `professionals and entrepreneurs` | `"software developers"` |
+The topic comes from the CSV; the request body is not used.
 
 **Success response:**
 ```json
 {
   "status": "success",
-  "message": "Post published to LinkedIn",
+  "topic": "Designing scalable APIs in ASP.NET Core with caching and Redis",
   "linkedInPostId": "urn:li:share:123456789",
-  "postContent": "AI is not replacing jobs..."
+  "postContent": "🚀 ..."
 }
 ```
 
 ---
 
-## Tone Options
+## Troubleshooting
 
-| Tone | Use for |
+| Error from Publish to LinkedIn | Fix |
 |---|---|
-| `professional` | Industry insights, career tips |
-| `inspirational` | Motivational stories, personal wins |
-| `casual` | Relatable everyday observations |
-| `bold` | Controversial takes, hot opinions |
-| `educational` | How-tos, step-by-step guides |
-| `storytelling` | Personal experiences, case studies |
+| `401 EXPIRED_ACCESS_TOKEN` | Token is over 60 days old — create a new one (Step 1) and update `LinkedIn Bearer`. |
+| `401 EMPTY_ACCESS_TOKEN` / `INVALID_ACCESS_TOKEN` | Credential not selected, or header value missing the `Bearer ` prefix. |
+| `403 ACCESS_DENIED` | Token lacks `w_member_social`, or `AUTHOR_URN` is not the token owner's URN. |
+| `426` / `NONEXISTENT_VERSION` | `LinkedIn-Version` header is too old. Set it to a current month (`YYYYMM`) — LinkedIn supports each version for about a year. |
+| `400 FIELD_LENGTH_TOO_LONG` | Post over 3000 characters (the formatter trims to 2900, so this is rare). |
+| Post text cut off | A reserved character wasn't escaped — check the **Format for LinkedIn** output. |
+
+Docs: [Posts API](https://learn.microsoft.com/linkedin/marketing/community-management/shares/posts-api) ·
+[little text format](https://learn.microsoft.com/linkedin/marketing/community-management/shares/little-text-format) ·
+[Share on LinkedIn](https://learn.microsoft.com/linkedin/consumer/integrations/self-serve/share-on-linkedin)

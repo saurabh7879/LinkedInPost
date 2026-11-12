@@ -12,7 +12,10 @@
       "name": "Post Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 1,
-      "position": [240, 300],
+      "position": [
+        240,
+        300
+      ],
       "webhookId": "linkedin-post-hook"
     },
     {
@@ -30,17 +33,26 @@
       "name": "Daily 9 AM IST",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.1,
-      "position": [240, 100]
+      "position": [
+        240,
+        100
+      ]
     },
     {
       "parameters": {
         "method": "GET",
-        "url": "https://raw.githubusercontent.com/saurabh7879/Automation/n8n/LinkedinPost/topics.csv",
+        "url": "https://raw.githubusercontent.com/saurabh7879/LinkedInPost/develop/topics.csv",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "User-Agent", "value": "n8n-workflow" },
-            { "name": "Accept", "value": "text/plain, */*" }
+            {
+              "name": "User-Agent",
+              "value": "n8n-workflow"
+            },
+            {
+              "name": "Accept",
+              "value": "text/plain, */*"
+            }
           ]
         },
         "options": {}
@@ -49,7 +61,10 @@
       "name": "Fetch CSV",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 3,
-      "position": [460, 300]
+      "position": [
+        460,
+        300
+      ]
     },
     {
       "parameters": {
@@ -59,7 +74,10 @@
       "name": "Parse CSV",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [680, 300]
+      "position": [
+        680,
+        300
+      ]
     },
     {
       "parameters": {
@@ -76,7 +94,10 @@
       "name": "Topic Exists?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 1,
-      "position": [900, 300]
+      "position": [
+        900,
+        300
+      ]
     },
     {
       "parameters": {
@@ -86,17 +107,27 @@
       "name": "Build Prompt",
       "type": "n8n-nodes-base.function",
       "typeVersion": 1,
-      "position": [1020, 200]
+      "position": [
+        1020,
+        200
+      ]
     },
     {
       "parameters": {
         "method": "POST",
         "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization", "value": "Bearer YOUR_OPENAI_API_KEY" },
-            { "name": "Content-Type", "value": "application/json" }
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_OPENAI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
           ]
         },
         "sendBody": true,
@@ -108,41 +139,85 @@
       "name": "Generate Post",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1200, 200]
+      "position": [
+        1200,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Turns the OpenAI reply into a LinkedIn Posts API request body.\n// LinkedIn \"little\" text format: reserved characters must be escaped with a\n// backslash or the post gets truncated/rejected. Hashtags become\n// {hashtag|\\#|Tag} templates so they stay clickable.\n\n// >>> Your LinkedIn member URN (from GET https://api.linkedin.com/v2/userinfo -> \"sub\")\nconst AUTHOR_URN = 'urn:li:person:EGqD78qR46';\n\nconst MAX_CHARS = 2900; // LinkedIn commentary limit is 3000\n\nlet raw = (($json.choices && $json.choices[0] && $json.choices[0].message && $json.choices[0].message.content) || '').trim();\nraw = raw.replace(/^```[a-z]*\\n?|\\n?```$/g, '').trim();\nif (!raw) {\n  throw new Error('OpenAI returned no post text');\n}\nif (raw.length > MAX_CHARS) {\n  const cut = raw.lastIndexOf('\\n', MAX_CHARS);\n  raw = raw.slice(0, cut > 0 ? cut : MAX_CHARS).trim();\n}\n\nconst escapeLittle = (s) => s.replace(/[\\\\|{}@\\[\\]()<>#*_~]/g, (c) => '\\\\' + c);\n\nconst tags = [];\nlet text = raw.replace(/#([\\p{L}\\p{N}_]+)/gu, (m, tag) => {\n  tags.push(tag);\n  return '\\u0000' + (tags.length - 1) + '\\u0000';\n});\ntext = escapeLittle(text);\ntext = text.replace(/\\u0000(\\d+)\\u0000/g, (m, i) => '{hashtag|\\\\#|' + escapeLittle(tags[Number(i)]) + '}');\n\nreturn [{\n  json: {\n    postText: raw,\n    body: {\n      author: AUTHOR_URN,\n      commentary: text,\n      visibility: 'PUBLIC',\n      distribution: {\n        feedDistribution: 'MAIN_FEED',\n        targetEntities: [],\n        thirdPartyDistributionChannels: []\n      },\n      lifecycleState: 'PUBLISHED',\n      isReshareDisabledByAuthor: false\n    }\n  }\n}];\n"
+      },
+      "id": "lip-0009-0009-0009-0009-000000000009",
+      "name": "Format for LinkedIn",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1400,
+        200
+      ]
     },
     {
       "parameters": {
         "method": "POST",
-        "url": "https://api.linkedin.com/v2/ugcPosts",
+        "url": "https://api.linkedin.com/rest/posts",
+        "authentication": "none",
         "sendHeaders": true,
         "headerParameters": {
           "parameters": [
-            { "name": "Authorization",             "value": "=Bearer AQV1cJUY3s12lg0SAMFt3J9kkVEM20VLYPg4KQ-tE3BLTo4OpjsrbTgPh79rxkkC9l5NasPmH_J2_u2zNEBOQfByrPiEjW8bEYFnmSKiRLmuAeP3SGEQ-gIyuGFXmQZ0ONnNTZAFf9v4GWJWVMhavsBuYOGQab0QZARP1U6VpEoSEGjGzGcrV8xnHK35WU6sRBXxFI9gzn5gZNe92o5HYM9iesSeK3D2uu9jQvC1ZgqaZsWnXLAlSt1Gbn7HTPg7-UkH42urztFS4Nl7qonwKG__sFo3Huva3m_GZg_2-lICmHBce_hO1r3B0UVw2kpDplwn2uMlliwuoMzBX_J7iw_w0uwnbw" },
-            { "name": "Content-Type",              "value": "application/json" },
-            { "name": "X-Restli-Protocol-Version", "value": "2.0.0" },
-            { "name": "LinkedIn-Version",          "value": "202402" }
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_LINKEDIN_ACCESS_TOKEN"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "X-Restli-Protocol-Version",
+              "value": "2.0.0"
+            },
+            {
+              "name": "LinkedIn-Version",
+              "value": "202610"
+            }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { author: \"urn:li:person:1H9p-wtG1P\", lifecycleState: \"PUBLISHED\", specificContent: { \"com.linkedin.ugc.ShareContent\": { shareCommentary: { text: $json.choices[0].message.content.trim() }, shareMediaCategory: \"NONE\" } }, visibility: { \"com.linkedin.ugc.MemberNetworkVisibility\": \"PUBLIC\" } } }}",
-        "options": {}
+        "jsonBody": "={{ JSON.stringify($json.body) }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
       },
       "id": "lip-0006-0006-0006-0006-000000000006",
       "name": "Publish to LinkedIn",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [1400, 200]
+      "position": [
+        1600,
+        200
+      ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ ({  \"status\": \"success\",  \"topic\": $('Parse CSV').item.json.Topic,  \"linkedInPostId\": $json.id,  \"postContent\": $('Generate Post').item.json.choices[0].message.content.trim()}) }}",
+        "responseBody": "={{ ({ \"status\": \"success\", \"topic\": $('Parse CSV').item.json.Topic, \"linkedInPostId\": $json.headers['x-restli-id'], \"postContent\": $('Format for LinkedIn').item.json.postText }) }}",
         "options": {
           "responseHeaders": {
             "entries": [
-              { "name": "Access-Control-Allow-Origin", "value": "*" },
-              { "name": "Content-Type",                "value": "application/json" }
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
             ]
           }
         }
@@ -151,7 +226,10 @@
       "name": "Success Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1600, 200]
+      "position": [
+        1800,
+        200
+      ]
     },
     {
       "parameters": {
@@ -160,8 +238,14 @@
         "options": {
           "responseHeaders": {
             "entries": [
-              { "name": "Access-Control-Allow-Origin", "value": "*" },
-              { "name": "Content-Type",                "value": "application/json" }
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
             ]
           }
         }
@@ -170,40 +254,125 @@
       "name": "No Topics Response",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
-      "position": [1120, 440]
+      "position": [
+        1120,
+        440
+      ]
     }
   ],
   "connections": {
     "Post Webhook": {
-      "main": [[{ "node": "Fetch CSV", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Fetch CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Daily 9 AM IST": {
-      "main": [[{ "node": "Fetch CSV", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Fetch CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Fetch CSV": {
-      "main": [[{ "node": "Parse CSV", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Parse CSV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Parse CSV": {
-      "main": [[{ "node": "Topic Exists?", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Topic Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Topic Exists?": {
       "main": [
-        [{ "node": "Build Prompt",       "type": "main", "index": 0 }],
-        [{ "node": "No Topics Response", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Build Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "No Topics Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
     "Build Prompt": {
-      "main": [[{ "node": "Generate Post", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Generate Post",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Generate Post": {
-      "main": [[{ "node": "Publish to LinkedIn", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Format for LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     },
     "Publish to LinkedIn": {
-      "main": [[{ "node": "Success Response", "type": "main", "index": 0 }]]
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format for LinkedIn": {
+      "main": [
+        [
+          {
+            "node": "Publish to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
-  "settings":   { "executionOrder": "v1", "timezone": "Asia/Kolkata" },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Kolkata"
+  },
   "staticData": null,
-  "tags":       [],
-  "pinData":    {}
+  "tags": [],
+  "pinData": {}
 }
