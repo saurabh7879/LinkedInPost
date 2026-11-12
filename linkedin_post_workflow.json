@@ -55,7 +55,9 @@
             }
           ]
         },
-        "options": {}
+        "options": {
+          "timeout": 30000
+        }
       },
       "id": "lip-0002-0002-0002-0002-000000000002",
       "name": "Fetch CSV",
@@ -64,11 +66,14 @@
       "position": [
         460,
         300
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
-        "functionCode": "var j = items[0].json;\nvar raw = '';\nif (typeof j === 'string') { raw = j; }\nelse if (j && typeof j.data === 'string') { raw = j.data; }\nelse if (j && typeof j.body === 'string') { raw = j.body; }\nelse if (j) { for (var k in j) { if (typeof j[k] === 'string' && j[k].indexOf(',') >= 0) { raw = j[k]; break; } } }\n\nvar lines = raw.split(/\\r?\\n/).filter(function(l) { return l.trim(); });\nif (lines.length < 1) { return [{ json: { Topic: '' } }]; }\n\nfunction parseCSVLine(line) {\n  var result = [];\n  var current = '';\n  var inQuotes = false;\n  for (var i = 0; i < line.length; i++) {\n    var ch = line[i];\n    if (ch === '\"') { inQuotes = !inQuotes; }\n    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }\n    else { current += ch; }\n  }\n  result.push(current.trim());\n  return result;\n}\n\nvar rows = [];\nfor (var i = 0; i < lines.length; i++) {\n  var vals = parseCSVLine(lines[i]);\n  if (vals[0] && vals[0].trim()) {\n    rows.push({ Topic: vals[0] || '', Tone: vals[1] || 'professional', Audience: vals[2] || 'professionals' });\n  }\n}\n\nif (rows.length === 0) { return [{ json: { Topic: '' } }]; }\n\nvar IST_OFFSET_MS = 5.5 * 60 * 60 * 1000;\nvar dayIndex = Math.floor((Date.now() + IST_OFFSET_MS) / 86400000);\nvar picked = rows[dayIndex % rows.length];\npicked._dayIndex = dayIndex;\npicked._totalTopics = rows.length;\n\nreturn [{ json: picked }];"
+        "functionCode": "var j = items[0].json;\nvar raw = '';\nif (typeof j === 'string') { raw = j; }\nelse if (j && typeof j.data === 'string') { raw = j.data; }\nelse if (j && typeof j.body === 'string') { raw = j.body; }\nelse if (j) { for (var k in j) { if (typeof j[k] === 'string' && j[k].indexOf(',') >= 0) { raw = j[k]; break; } } }\n\nvar lines = raw.split(/\\r?\\n/).filter(function(l) { return l.trim(); });\nif (lines.length < 1) { return [{ json: { Topic: '' } }]; }\n\nfunction parseCSVLine(line) {\n  var result = [];\n  var current = '';\n  var inQuotes = false;\n  for (var i = 0; i < line.length; i++) {\n    var ch = line[i];\n    if (ch === '\"') { inQuotes = !inQuotes; }\n    else if (ch === ',' && !inQuotes) { result.push(current.trim()); current = ''; }\n    else { current += ch; }\n  }\n  result.push(current.trim());\n  return result;\n}\n\nvar rows = [];\nfor (var i = 0; i < lines.length; i++) {\n  var vals = parseCSVLine(lines[i]);\n  if (vals[0] && vals[0].trim()) {\n    rows.push({ Topic: vals[0] || '', Tone: vals[1] || 'professional', Audience: vals[2] || 'professionals' });\n  }\n}\n\nif (rows.length === 0) { return [{ json: { Topic: '' } }]; }\n\n// Post topics in file order, skipping ones already published.\n// Published topics are remembered in workflow static data by the\n// \"Mark Topic Posted\" node (saved only for runs of the ACTIVE workflow).\nvar store = getWorkflowStaticData('global');\nvar posted = store.postedTopics || [];\nvar postedSet = {};\nfor (var p = 0; p < posted.length; p++) { postedSet[posted[p].toLowerCase()] = true; }\n\nvar picked = null;\nfor (var r = 0; r < rows.length; r++) {\n  if (!postedSet[rows[r].Topic.toLowerCase()]) { picked = rows[r]; picked._position = r + 1; break; }\n}\nif (!picked) { return [{ json: { Topic: '', _reason: 'All ' + rows.length + ' topics have been posted' } }]; }\n\npicked._totalTopics = rows.length;\npicked._postedSoFar = posted.length;\nreturn [{ json: picked }];"
       },
       "id": "lip-0003-0003-0003-0003-000000000003",
       "name": "Parse CSV",
@@ -101,7 +106,7 @@
     },
     {
       "parameters": {
-        "functionCode": "const topic = $input.first().json.Topic || '';\nconst tone = $input.first().json.Tone || 'professional';\n\nconst prompt = `You are a LinkedIn content expert. Write a LinkedIn post strictly following this format.\\n\\nTopic: ${topic}\\nTone: ${tone}\\n\\n---FORMAT TO FOLLOW EXACTLY---\\n\\nLine 1: [relevant emoji] [Topic Title]: [Catchy subtitle]\\n\\n[blank line]\\n\\nOne sentence explanation of what the topic is.\\n\\n[blank line]\\n\\n\\uD83D\\uDC49 Real-time Example: [Relatable real-world scenario]\\n[emoji] [sub-point 1]\\n[emoji] [sub-point 2]\\n[emoji] [sub-point 3]\\n[emoji] [sub-point 4]\\nAll are part of one closing sentence.\\n\\n[blank line]\\n\\n\\u26A1 Pros:\\n[positive point] [emoji]\\n[positive point] [emoji]\\n\\n[blank line]\\n\\n\\u26A0\\uFE0F Cons:\\n[negative point]\\n[negative point] [emoji]\\n\\n[blank line]\\n\\n\\uD83D\\uDCA1 In short: [One sentence summary with core tradeoff]\\n\\n[blank line]\\n\\n\\uD83D\\uDCAC Question for you: [Engaging question to spark comments]\\n\\n\\uD83D\\uDC47 Share your thoughts!\\n\\n#Hashtag1 #Hashtag2 #Hashtag3 #Hashtag4 #Hashtag5\\n---END FORMAT---\\n\\nReturn ONLY the post text.`;\n\nreturn [{ json: { prompt: prompt } }];"
+        "functionCode": "// Builds the ghostwriter brief sent to OpenAI (system = who writes, user = what to write).\nvar row = items[0].json;\nvar topic = (row.Topic || '').trim();\nvar tone = row.Tone || 'professional, confident and warm';\nvar audience = row.Audience || 'software engineers, tech leads and engineering managers';\n\nvar system = [\n  'You are an elite LinkedIn ghostwriter for a senior software engineer who writes about',\n  '.NET, system design, distributed systems, cloud, AI and engineering leadership.',\n  'Your posts are the kind experienced engineers save and share: clear, specific,',\n  'confident and human. You explain hard ideas simply, with the calm authority of',\n  'someone who has run systems in production. You never sound like marketing copy',\n  'or like an AI.'\n].join('\\n');\n\nvar prompt = [\n  'Write one LinkedIn post.',\n  '',\n  'Topic: ' + topic,\n  'Tone: ' + tone,\n  'Audience: ' + audience,\n  '',\n  'STRUCTURE (keep this order, one blank line between every block):',\n  '',\n  '1. HOOK - the first 1-2 lines, under 180 characters in total. This is all that',\n  '   shows before \"...see more\", so it must earn the click. Start with one fitting',\n  '   emoji, then a sharp claim, a common mistake, or a surprising truth about the',\n  '   topic. Do not open with a question, a definition, an analogy, or',\n  '   \"Let\\'s talk about\", and do not restate the topic title. Make it specific and',\n  '   a little bold, like: \"🧊 Your cache is not making your API fast. It is hiding',\n  '   a slow one.\" Pick an emoji that fits the topic, not 🚀 by default.',\n  '',\n  '2. WHY IT MATTERS - 2-3 short lines: what it is in plain words and what goes',\n  '   wrong in real systems when people get it wrong.',\n  '',\n  '3. \"🏗️ Real-world example:\" - one concrete, relatable scenario (an e-commerce',\n  '   checkout, a payments API, a ride-hailing app, a team under deadline...).',\n  '   Walk through it in 3-4 lines, each starting with \"→ \".',\n  '',\n  '4. \"✅ Do this:\" - 3 practical, specific recommendations, each one line',\n  '   starting with \"▸ \". Each must be concrete enough to apply tomorrow: name the',\n  '   exact pattern, API, setting or number (e.g. cache-aside, HybridCache, TTL with',\n  '   jitter, idempotency keys, p99 latency). No generic advice like \"monitor it\".',\n  '',\n  '5. \"⚠️ Watch out:\" - 2 trade-offs or pitfalls, each one line starting with \"▸ \".',\n  '',\n  '6. \"💡 Bottom line:\" - one memorable sentence that captures the core trade-off.',\n  '',\n  '7. \"💬 \" followed by one specific, opinion-inviting question for the audience',\n  '   (not \"What do you think?\").',\n  '',\n  '8. Last line: 4-5 relevant hashtags in PascalCase, e.g. #SystemDesign #DotNet.',\n  '',\n  'STYLE RULES:',\n  '- 1,200-1,900 characters in total.',\n  '- Short lines. No paragraph longer than 2 sentences. Lots of white space.',\n  '- Use \"you\" and active voice. Plain, precise words over jargon.',\n  '- Every line must teach something or move the story. Cut filler and hedging.',\n  '- Emojis only as the section markers above, plus the one in the hook.',\n  '- Plain text only: no markdown, no **bold**, no # headings, no code blocks,',\n  '  no links. LinkedIn does not render markdown.',\n  '- Do not invent personal stories, employers, statistics, studies or quotes.',\n  '  Examples must read as illustrations, not as claims of real events.',\n  '- Never use: \"In today\\'s fast-paced world\", \"game-changer\", \"delve\", \"unlock\",',\n  '  \"leverage\", \"landscape\", \"revolutionize\", \"buckle up\", \"let that sink in\",',\n  '  \"here\\'s the thing\", \"in conclusion\", \"crucial\", \"critical\", \"robust\",',\n  '  \"seamless\", \"world of hurt\", \"make or break\", \"saves the day\", \"harness\".',\n  '- No trailing spaces at the end of lines.',\n  '',\n  'Return ONLY the post text, nothing before or after it.'\n].join('\\n');\n\nreturn [{ json: { system: system, prompt: prompt } }];\n"
       },
       "id": "lip-0004b-0004b-0004b-0004b-000000000004b",
       "name": "Build Prompt",
@@ -132,8 +137,10 @@
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={{ { model: \"gpt-4o-mini\", messages: [ { role: \"user\", content: $json.prompt } ] } }}",
-        "options": {}
+        "jsonBody": "={{ { model: \"gpt-4o\", temperature: 0.75, max_tokens: 1200, messages: [ { role: \"system\", content: $json.system }, { role: \"user\", content: $json.prompt } ] } }}",
+        "options": {
+          "timeout": 120000
+        }
       },
       "id": "lip-0005-0005-0005-0005-000000000005",
       "name": "Generate Post",
@@ -142,11 +149,14 @@
       "position": [
         1200,
         200
-      ]
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
     },
     {
       "parameters": {
-        "jsCode": "// Turns the OpenAI reply into a LinkedIn Posts API request body.\n// LinkedIn \"little\" text format: reserved characters must be escaped with a\n// backslash or the post gets truncated/rejected. Hashtags become\n// {hashtag|\\#|Tag} templates so they stay clickable.\n\n// >>> Your LinkedIn member URN (from GET https://api.linkedin.com/v2/userinfo -> \"sub\")\nconst AUTHOR_URN = 'urn:li:person:EGqD78qR46';\n\nconst MAX_CHARS = 2900; // LinkedIn commentary limit is 3000\n\nlet raw = (($json.choices && $json.choices[0] && $json.choices[0].message && $json.choices[0].message.content) || '').trim();\nraw = raw.replace(/^```[a-z]*\\n?|\\n?```$/g, '').trim();\nif (!raw) {\n  throw new Error('OpenAI returned no post text');\n}\nif (raw.length > MAX_CHARS) {\n  const cut = raw.lastIndexOf('\\n', MAX_CHARS);\n  raw = raw.slice(0, cut > 0 ? cut : MAX_CHARS).trim();\n}\n\nconst escapeLittle = (s) => s.replace(/[\\\\|{}@\\[\\]()<>#*_~]/g, (c) => '\\\\' + c);\n\nconst tags = [];\nlet text = raw.replace(/#([\\p{L}\\p{N}_]+)/gu, (m, tag) => {\n  tags.push(tag);\n  return '\\u0000' + (tags.length - 1) + '\\u0000';\n});\ntext = escapeLittle(text);\ntext = text.replace(/\\u0000(\\d+)\\u0000/g, (m, i) => '{hashtag|\\\\#|' + escapeLittle(tags[Number(i)]) + '}');\n\nreturn [{\n  json: {\n    postText: raw,\n    body: {\n      author: AUTHOR_URN,\n      commentary: text,\n      visibility: 'PUBLIC',\n      distribution: {\n        feedDistribution: 'MAIN_FEED',\n        targetEntities: [],\n        thirdPartyDistributionChannels: []\n      },\n      lifecycleState: 'PUBLISHED',\n      isReshareDisabledByAuthor: false\n    }\n  }\n}];\n"
+        "jsCode": "// Turns the OpenAI reply into a LinkedIn Posts API request body.\n// LinkedIn \"little\" text format: reserved characters must be escaped with a\n// backslash or the post gets truncated/rejected. Hashtags become\n// {hashtag|\\#|Tag} templates so they stay clickable.\n\n// >>> Your LinkedIn member URN (from GET https://api.linkedin.com/v2/userinfo -> \"sub\")\nconst AUTHOR_URN = 'urn:li:person:EGqD78qR46';\n\nconst MAX_CHARS = 2900; // LinkedIn commentary limit is 3000\n\nlet raw = (($json.choices && $json.choices[0] && $json.choices[0].message && $json.choices[0].message.content) || '').trim();\nraw = raw.replace(/^```[a-z]*\\n?|\\n?```$/g, '').trim();\nif (!raw) {\n  throw new Error('OpenAI returned no post text');\n}\n// Bold header: the topic from the CSV. LinkedIn has no bold formatting, so\n// letters and digits are mapped to Unicode Mathematical Sans-Serif Bold.\nconst toBold = (s) => Array.from(s).map((ch) => {\n  const c = ch.codePointAt(0);\n  if (c >= 65 && c <= 90) return String.fromCodePoint(0x1D5D4 + c - 65);   // A-Z\n  if (c >= 97 && c <= 122) return String.fromCodePoint(0x1D5EE + c - 97);  // a-z\n  if (c >= 48 && c <= 57) return String.fromCodePoint(0x1D7EC + c - 48);   // 0-9\n  return ch;\n}).join('');\n// Topic-matched emoji in front of the bold header (first keyword match wins).\nconst EMOJI_RULES = [\n  [/\\b(ai|llms?|gpt|genai|machine learning|ml|agents?|agentic|rag|prompts?|prompting|embeddings?|vector|copilot|mcp|chatbot|multi model|gpu)\\b/i, '🤖'],\n  [/(secur|auth|jwt|oauth|encrypt|owasp|vulnerab|token|identity|zero trust|threat|ddos|bot detection|hacking|compliance|gdpr|rbac|abac|secret)/i, '🔐'],\n  [/(incident|postmortem|root cause|disaster|recovery|resilien|fault|failover|backup|retry|circuit breaker|backpressure|outage|rollback)/i, '🛡️'],\n  [/(cach|redis|cdn)/i, '⚡'],\n  [/(database|sql|nosql|index|query|mongo|postgres|cosmos|shard|replica|replication|transaction|storage|acid|olap|oltp|etl|elt|data lake|warehous|schema|archiv|dataset|elasticsearch|full text search|connection pool)/i, '🗄️'],\n  [/(docker|kubernetes|k8s|container|devops|ci cd|ci\\/cd|pipeline|deploy|argo|flux|gitops|terraform|helm|infrastructure|configmap|build)/i, '🐳'],\n  [/(cloud|azure|aws|gcp|serverless)/i, '☁️'],\n  [/(monitor|observab|logging|tracing|metrics|alert)/i, '📊'],\n  [/(real time|realtime|websocket|signalr|stream)/i, '📡'],\n  [/(microservice|distributed|kafka|queue|event|messag|saga|cap theorem|consistency|partition|load balanc|cqrs|idempoten|edge computing|large systems)/i, '🧩'],\n  [/(ui|ux|frontend|front end|ssr|csr|ssg|lazy loading|code splitting|accessibility|progressive web|offline first|storybook|infinite scroll|react|angular|blazor|voice|slow network|edge rendering)/i, '🎨'],\n  [/(test|tdd|quality|bug|debug|code review)/i, '🧪'],\n  [/(perform|latency|scal|async|parallel|concurren|throughput|optimi|protobuf)/i, '🚀'],\n  [/(api|rest|graphql|grpc|endpoint|http|pagination|webhook|versioning)/i, '🔌'],\n  [/(pattern|solid|architect|design|clean code|refactor|principle|ddd|aggregate|bounded context|coupling|factory|singleton|dependency injection|god object|domain|maintainable|technical debt)/i, '🏛️'],\n  [/(blog|writing|documentation|branding|linkedin|portfolio|open source)/i, '✍️'],\n  [/(learn|staying updated|mindset|burnout|career|growth|habit|senior|junior)/i, '🌱'],\n  [/(lead|team|manag|mentor|decision|communicat|time|productiv|priorit|roadmap|engineer|hiring|interview)/i, '🧭'],\n];\nconst FALLBACK_EMOJI = ['✨', '💡', '🎯', '📌', '🧠'];\nconst pickEmoji = (t) => {\n  for (const [re, e] of EMOJI_RULES) { if (re.test(t)) return e; }\n  let h = 0; for (const ch of t) h = (h * 31 + ch.codePointAt(0)) >>> 0;\n  return FALLBACK_EMOJI[h % FALLBACK_EMOJI.length];\n};\n\nconst topic = (($('Parse CSV').first().json.Topic) || '').trim();\nif (topic) {\n  raw = pickEmoji(topic) + ' ' + toBold(topic) + '\\n\\n' + raw;\n}\n\nif (raw.length > MAX_CHARS) {\n  const cut = raw.lastIndexOf('\\n', MAX_CHARS);\n  raw = raw.slice(0, cut > 0 ? cut : MAX_CHARS).trim();\n}\n\nconst escapeLittle = (s) => s.replace(/[\\\\|{}@\\[\\]()<>#*_~]/g, (c) => '\\\\' + c);\n\nconst tags = [];\nlet text = raw.replace(/#([\\p{L}\\p{N}_]+)/gu, (m, tag) => {\n  tags.push(tag);\n  return '\\u0000' + (tags.length - 1) + '\\u0000';\n});\ntext = escapeLittle(text);\ntext = text.replace(/\\u0000(\\d+)\\u0000/g, (m, i) => '{hashtag|\\\\#|' + escapeLittle(tags[Number(i)]) + '}');\n\nreturn [{\n  json: {\n    postText: raw,\n    body: {\n      author: AUTHOR_URN,\n      commentary: text,\n      visibility: 'PUBLIC',\n      distribution: {\n        feedDistribution: 'MAIN_FEED',\n        targetEntities: [],\n        thirdPartyDistributionChannels: []\n      },\n      lifecycleState: 'PUBLISHED',\n      isReshareDisabledByAuthor: false\n    }\n  }\n}];\n"
       },
       "id": "lip-0009-0009-0009-0009-000000000009",
       "name": "Format for LinkedIn",
@@ -191,7 +201,8 @@
             "response": {
               "fullResponse": true
             }
-          }
+          },
+          "timeout": 60000
         }
       },
       "id": "lip-0006-0006-0006-0006-000000000006",
@@ -227,14 +238,14 @@
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1,
       "position": [
-        1800,
+        2000,
         200
       ]
     },
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={\n  \"status\": \"done\",\n  \"message\": \"No topics found in CSV. Add rows to linkedin-topics.csv and re-upload.\"\n}",
+        "responseBody": "={{ ({ \"status\": \"done\", \"message\": ($json._reason || \"No topics found in CSV\") + \". Add new rows to topics.csv and push to develop.\" }) }}",
         "options": {
           "responseHeaders": {
             "entries": [
@@ -257,6 +268,19 @@
       "position": [
         1120,
         440
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Runs only after LinkedIn accepted the post: remember the topic so it is not posted again.\nconst store = $getWorkflowStaticData('global');\nconst topic = $('Parse CSV').first().json.Topic;\nstore.postedTopics = store.postedTopics || [];\nif (!store.postedTopics.some(t => t.toLowerCase() === topic.toLowerCase())) {\n  store.postedTopics.push(topic);\n}\nreturn $input.all();\n"
+      },
+      "id": "lip-0012-0012-0012-0012-000000000012",
+      "name": "Mark Topic Posted",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1800,
+        200
       ]
     }
   ],
@@ -349,7 +373,7 @@
       "main": [
         [
           {
-            "node": "Success Response",
+            "node": "Mark Topic Posted",
             "type": "main",
             "index": 0
           }
@@ -361,6 +385,17 @@
         [
           {
             "node": "Publish to LinkedIn",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Topic Posted": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
             "type": "main",
             "index": 0
           }
